@@ -8,4 +8,6 @@ I found a few of the choices in coding interesting. For example it really didn't
 
 The journalistic possibilites are incredibly obvious here. In fact, I'm already using AI for code. Outside of this class, nearly 100% of my AI usage has been for working with datasets or coding. In both of my other two classes this semester, I am using AI to assist in coding websites with complicated elements — especially when it comes to using JavaScript where I am not skilled yet. Using AI doesn't take a novice coder (me) and suddenly make a great coder, but it does teach skills and allow better access to more accessible websites. I've also used AI for some smaller tasks in relation to coding like helping generate color ramps that fit with website style guides. We can use AI to help with coding for JavaScript/chartJS graphics. I am currently using AI to help me add a scrollytelling element to a webpage I am creating with data visualizations. Using AI for code has really opened up a whole world for me of journalistic ideas and uses that I previously never could have considered doing because I didn't have the knowledge to even consider doing it. 
 
+LLM convo with Gemini here: https://g.co/gemini/share/e81fb3464ed6
+
 Start with [this data](https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/md_pres_county.csv).
