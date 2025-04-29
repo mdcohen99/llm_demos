@@ -27,40 +27,51 @@ Washington,27260,44054,363,513,811,331,73332
 Wicomico,21513,24065,205,371,544,214,46912
 Worcester,12431,19632,139,184,342,153,32881`;
 
-// Candidate names mapping (key: CSV header, value: Display Name)
-const candidateNames = {
-    harris: "Harris",
-    trump: "Trump",
-    oliver: "Oliver",
-    stein: "Stein",
-    kennedy: "Kennedy",
-    others: "Others"
-};
-
-// Candidate CSS classes for bars
-const candidateClasses = {
-    harris: "harris",
-    trump: "trump",
-    oliver: "oliver",
-    stein: "stein",
-    kennedy: "kennedy",
-    others: "others"
+// Candidate information including name, party, and CSS class
+const candidateInfo = {
+    harris: { name: "Harris", party: "D", class: "harris" },
+    trump: { name: "Trump", party: "R", class: "trump" },
+    oliver: { name: "Oliver", party: "L", class: "oliver" }, // Assuming Libertarian
+    stein: { name: "Stein", party: "G", class: "stein" },   // Assuming Green
+    kennedy: { name: "Kennedy", party: "I", class: "kennedy" }, // Assuming Independent
+    others: { name: "Others", party: "", class: "others" }     // No party for Others
 };
 
 // Function to parse the CSV data string into an array of objects
 function parseCSV(data) {
     const lines = data.trim().split('\n');
+    // Get headers, ensuring 'jurisdiction' is first and the rest match candidateInfo keys
     const headers = lines[0].split(',').map(header => header.trim());
-    const result = [];
+    const candidateKeys = Object.keys(candidateInfo); // Get keys like 'harris', 'trump', etc.
+    const orderedHeaders = ['jurisdiction', ...candidateKeys, 'total']; // Define expected order
 
+    // Basic validation of headers
+    if (headers.length !== orderedHeaders.length || !headers.every((h, i) => orderedHeaders.includes(h))) {
+         console.error("CSV headers do not match expected format:", headers);
+         // You might want to throw an error or handle this more robustly
+         // For now, we proceed assuming the order is correct based on the provided CSV
+    }
+
+
+    const result = [];
     for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',');
+        // Check if the number of values matches the number of headers
+         if (values.length !== headers.length) {
+            console.warn(`Skipping row ${i + 1}: Incorrect number of columns.`);
+            continue; // Skip this row if the column count is wrong
+        }
         const entry = {};
         for (let j = 0; j < headers.length; j++) {
             const key = headers[j];
             const value = values[j].trim();
-            // Store jurisdiction as string, others as numbers
-            entry[key] = (j === 0) ? value : parseInt(value, 10);
+            // Store jurisdiction as string, others as numbers, handle potential NaN
+            if (key === 'jurisdiction') {
+                 entry[key] = value;
+            } else {
+                 const numValue = parseInt(value, 10);
+                 entry[key] = isNaN(numValue) ? 0 : numValue; // Default to 0 if parsing fails
+            }
         }
         result.push(entry);
     }
@@ -70,20 +81,20 @@ function parseCSV(data) {
 // Function to calculate statewide totals
 function calculateStatewideTotals(data) {
     const totals = { total: 0 };
-    // Initialize totals for each candidate
-    Object.keys(candidateNames).forEach(key => {
+    // Initialize totals for each candidate based on candidateInfo
+    Object.keys(candidateInfo).forEach(key => {
         totals[key] = 0;
     });
 
     data.forEach(county => {
-        Object.keys(candidateNames).forEach(key => {
-            // Ensure the key exists in the county data before adding
-            if (county.hasOwnProperty(key)) {
+        Object.keys(candidateInfo).forEach(key => {
+            // Ensure the key exists in the county data and is a number before adding
+            if (county.hasOwnProperty(key) && typeof county[key] === 'number') {
                 totals[key] += county[key];
             }
         });
-        // Ensure 'total' exists before adding
-        if (county.hasOwnProperty('total')) {
+        // Ensure 'total' exists and is a number before adding
+        if (county.hasOwnProperty('total') && typeof county.total === 'number') {
              totals.total += county.total;
         }
     });
@@ -116,8 +127,8 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
     totalVotesP.textContent = `Total Votes: ${formatNumber(totalVotes)}`;
     containerElement.appendChild(totalVotesP);
 
-    // Display each candidate's results
-    Object.keys(candidateNames).forEach(key => {
+    // Display each candidate's results using candidateInfo
+    Object.keys(candidateInfo).forEach(key => {
         // Ensure the candidate key exists in the data object
         if (!data.hasOwnProperty(key)) {
             console.warn(`Data for candidate "${key}" not found.`);
@@ -132,15 +143,18 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
         }
 
         const percentage = ((votes / totalVotes) * 100).toFixed(1);
-        const displayName = candidateNames[key];
-        const cssClass = candidateClasses[key]; // Get CSS class for the candidate
+        const info = candidateInfo[key]; // Get the candidate's info object
+        const displayName = info.name;
+        const party = info.party ? `(${info.party})` : ''; // Add party in parentheses if it exists
+        const cssClass = info.class; // Get CSS class for the candidate
 
         const barContainer = document.createElement('div');
         barContainer.className = 'result-bar-container';
 
         const label = document.createElement('div');
         label.className = 'result-bar-label text-sm';
-        label.textContent = displayName;
+        // Display name and party
+        label.textContent = `${displayName} ${party}`;
 
         const barWrapper = document.createElement('div');
         barWrapper.className = 'result-bar-wrapper';
@@ -158,9 +172,6 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
         containerElement.appendChild(barContainer);
 
         // --- Animation Trigger ---
-        // Use setTimeout to allow the browser to render the initial state (width: 0%)
-        // before starting the transition to the final width.
-        // This ensures the CSS transition takes effect.
         setTimeout(() => {
             bar.style.width = `${percentage}%`; // Set final width, triggering the animation
         }, 10); // A small delay (e.g., 10ms) is usually sufficient
@@ -171,6 +182,14 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
 
 document.addEventListener('DOMContentLoaded', () => {
     const electionData = parseCSV(csvData);
+    // Add basic check if parsing failed or returned empty
+    if (!electionData || electionData.length === 0) {
+        console.error("Failed to parse election data or data is empty.");
+        // Display an error message to the user
+        document.body.innerHTML = '<p class="text-red-600 font-bold text-center p-8">Error loading election data. Please check the console.</p>';
+        return; // Stop execution if data is bad
+    }
+
     const statewideTotals = calculateStatewideTotals(electionData);
 
     const countySelect = document.getElementById('county-select');
