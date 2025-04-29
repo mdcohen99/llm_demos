@@ -40,37 +40,30 @@ const candidateInfo = {
 // Function to parse the CSV data string into an array of objects
 function parseCSV(data) {
     const lines = data.trim().split('\n');
-    // Get headers, ensuring 'jurisdiction' is first and the rest match candidateInfo keys
     const headers = lines[0].split(',').map(header => header.trim());
-    const candidateKeys = Object.keys(candidateInfo); // Get keys like 'harris', 'trump', etc.
-    const orderedHeaders = ['jurisdiction', ...candidateKeys, 'total']; // Define expected order
+    const candidateKeys = Object.keys(candidateInfo);
+    const orderedHeaders = ['jurisdiction', ...candidateKeys, 'total'];
 
-    // Basic validation of headers
     if (headers.length !== orderedHeaders.length || !headers.every((h, i) => orderedHeaders.includes(h))) {
          console.error("CSV headers do not match expected format:", headers);
-         // You might want to throw an error or handle this more robustly
-         // For now, we proceed assuming the order is correct based on the provided CSV
     }
-
 
     const result = [];
     for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',');
-        // Check if the number of values matches the number of headers
          if (values.length !== headers.length) {
             console.warn(`Skipping row ${i + 1}: Incorrect number of columns.`);
-            continue; // Skip this row if the column count is wrong
+            continue;
         }
         const entry = {};
         for (let j = 0; j < headers.length; j++) {
             const key = headers[j];
             const value = values[j].trim();
-            // Store jurisdiction as string, others as numbers, handle potential NaN
             if (key === 'jurisdiction') {
                  entry[key] = value;
             } else {
                  const numValue = parseInt(value, 10);
-                 entry[key] = isNaN(numValue) ? 0 : numValue; // Default to 0 if parsing fails
+                 entry[key] = isNaN(numValue) ? 0 : numValue;
             }
         }
         result.push(entry);
@@ -81,19 +74,16 @@ function parseCSV(data) {
 // Function to calculate statewide totals
 function calculateStatewideTotals(data) {
     const totals = { total: 0 };
-    // Initialize totals for each candidate based on candidateInfo
     Object.keys(candidateInfo).forEach(key => {
         totals[key] = 0;
     });
 
     data.forEach(county => {
         Object.keys(candidateInfo).forEach(key => {
-            // Ensure the key exists in the county data and is a number before adding
             if (county.hasOwnProperty(key) && typeof county[key] === 'number') {
                 totals[key] += county[key];
             }
         });
-        // Ensure 'total' exists and is a number before adding
         if (county.hasOwnProperty('total') && typeof county.total === 'number') {
              totals.total += county.total;
         }
@@ -103,68 +93,68 @@ function calculateStatewideTotals(data) {
 
 // Function to format numbers with commas
 function formatNumber(num) {
-    // Check if num is a valid number before formatting
     if (typeof num !== 'number' || isNaN(num)) {
-        return 'N/A'; // Or return '0' or some other placeholder
+        return 'N/A';
     }
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 // Function to display results (either statewide or county) using bars
 function displayResults(containerElement, titleElement, title, data, totalVotes) {
-    titleElement.textContent = title; // Update the title
-    containerElement.innerHTML = ''; // Clear previous results
+    titleElement.textContent = title;
+    containerElement.innerHTML = '';
 
-    // Check if data is valid and totalVotes is a positive number
     if (!data || typeof totalVotes !== 'number' || totalVotes <= 0) {
         containerElement.innerHTML = '<p class="text-center text-gray-500">No data available or total votes are zero.</p>';
         return;
     }
 
-    // Add total votes display
     const totalVotesP = document.createElement('p');
     totalVotesP.className = 'text-sm font-semibold text-gray-600 mb-3';
     totalVotesP.textContent = `Total Votes: ${formatNumber(totalVotes)}`;
     containerElement.appendChild(totalVotesP);
 
-    // Display each candidate's results using candidateInfo
     Object.keys(candidateInfo).forEach(key => {
-        // Ensure the candidate key exists in the data object
         if (!data.hasOwnProperty(key)) {
             console.warn(`Data for candidate "${key}" not found.`);
-            return; // Skip this candidate if data is missing
+            return;
         }
 
         const votes = data[key];
-        // Ensure votes is a number
         if (typeof votes !== 'number') {
              console.warn(`Invalid vote count for candidate "${key}":`, votes);
-             return; // Skip if votes is not a number
+             return;
         }
 
         const percentage = ((votes / totalVotes) * 100).toFixed(1);
-        const info = candidateInfo[key]; // Get the candidate's info object
+        const info = candidateInfo[key];
         const displayName = info.name;
-        const party = info.party ? `(${info.party})` : ''; // Add party in parentheses if it exists
-        const cssClass = info.class; // Get CSS class for the candidate
+        const party = info.party ? `(${info.party})` : '';
+        const cssClass = info.class;
 
         const barContainer = document.createElement('div');
         barContainer.className = 'result-bar-container';
 
         const label = document.createElement('div');
         label.className = 'result-bar-label text-sm';
-        // Display name and party
         label.textContent = `${displayName} ${party}`;
 
         const barWrapper = document.createElement('div');
         barWrapper.className = 'result-bar-wrapper';
 
         const bar = document.createElement('div');
-        // Add candidate-specific class and base class
         bar.className = `result-bar ${cssClass}`;
-        // Set initial width to 0% for animation start
-        bar.style.width = '0%';
-        bar.textContent = `${percentage}% (${formatNumber(votes)})`; // Show percentage and votes
+        bar.style.width = '0%'; // Initial width for animation
+        // Set text content for the bar itself (might be hidden on small bars)
+        bar.textContent = `${percentage}% (${formatNumber(votes)})`;
+
+        // --- Add Tooltip ---
+        // Set the title attribute for the hover tooltip
+        const tooltipText = `${displayName} ${party}: ${formatNumber(votes)} votes (${percentage}%)`;
+        bar.setAttribute('title', tooltipText);
+        // Also set the title on the wrapper in case the bar itself is 0 width or very small
+        barWrapper.setAttribute('title', tooltipText);
+
 
         barWrapper.appendChild(bar);
         barContainer.appendChild(label);
@@ -173,8 +163,8 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
 
         // --- Animation Trigger ---
         setTimeout(() => {
-            bar.style.width = `${percentage}%`; // Set final width, triggering the animation
-        }, 10); // A small delay (e.g., 10ms) is usually sufficient
+            bar.style.width = `${percentage}%`;
+        }, 10);
     });
 }
 
@@ -182,12 +172,10 @@ function displayResults(containerElement, titleElement, title, data, totalVotes)
 
 document.addEventListener('DOMContentLoaded', () => {
     const electionData = parseCSV(csvData);
-    // Add basic check if parsing failed or returned empty
     if (!electionData || electionData.length === 0) {
         console.error("Failed to parse election data or data is empty.");
-        // Display an error message to the user
         document.body.innerHTML = '<p class="text-red-600 font-bold text-center p-8">Error loading election data. Please check the console.</p>';
-        return; // Stop execution if data is bad
+        return;
     }
 
     const statewideTotals = calculateStatewideTotals(electionData);
@@ -196,11 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const statewideContainer = document.getElementById('statewide-totals-container');
     const countyContainer = document.getElementById('county-percentages-container');
     const countyTitleElement = document.getElementById('county-results-title');
-    // Create a dummy element for the statewide title since it's handled by H2 in HTML
-    const statewideTitleElement = document.createElement('div');
+    const statewideTitleElement = document.createElement('div'); // Dummy element
 
     // Populate county dropdown
-    electionData.sort((a, b) => a.jurisdiction.localeCompare(b.jurisdiction)); // Sort counties alphabetically
+    electionData.sort((a, b) => a.jurisdiction.localeCompare(b.jurisdiction));
     electionData.forEach(county => {
         const option = document.createElement('option');
         option.value = county.jurisdiction;
@@ -208,11 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
         countySelect.appendChild(option);
     });
 
-    // Display statewide results initially
+    // Display initial results
     displayResults(statewideContainer, statewideTitleElement, '', statewideTotals, statewideTotals.total);
-    // Also display statewide in the county section initially
     displayResults(countyContainer, countyTitleElement, 'Statewide Results', statewideTotals, statewideTotals.total);
-
 
     // Add event listener for county selection change
     countySelect.addEventListener('change', (event) => {
@@ -227,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 countyTitleElement.textContent = 'County Results';
             }
         } else {
-            // If "-- Select a County --" is chosen, show statewide results again
              displayResults(countyContainer, countyTitleElement, 'Statewide Results', statewideTotals, statewideTotals.total);
         }
     });
