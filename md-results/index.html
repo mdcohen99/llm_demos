@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maryland Election Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Optional: Configure Tailwind defaults if needed
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+              },
+            }
+          }
+        }
+      </script>
+</head>
+<body class="bg-gray-100 font-sans p-4 md:p-8">
+
+    <div class="container mx-auto max-w-4xl bg-white p-6 rounded-lg shadow-md">
+
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">Maryland Election Results</h1>
+
+        <section id="statewide-results" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Statewide Totals & Percentages</h2>
+            <div id="statewide-totals-container" class="space-y-2">
+                <p class="text-center text-gray-500">Loading statewide results...</p>
+            </div>
+        </section>
+
+        <section class="mb-8">
+            <label for="county-select" class="block text-lg font-medium text-gray-700 mb-2">View Results by County:</label>
+            <select id="county-select" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                <option value="">-- Select a County --</option>
+                </select>
+        </section>
+
+        <section id="county-results" class="p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-[150px]">
+             <h2 id="county-results-title" class="text-xl font-semibold text-gray-700 mb-4">County Results</h2>
+            <div id="county-percentages-container" class="space-y-2">
+                <p class="text-center text-gray-500">Select a county from the dropdown above to see results.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
